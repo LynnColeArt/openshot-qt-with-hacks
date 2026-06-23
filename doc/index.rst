@@ -51,6 +51,12 @@ Table of Contents:
    preferences
    playback
    ai
+   creative_workflow_vision
+   creative_workflow_plan
+   creative_workflow_milestones
+   creative_workflow_mission_breakdown
+   creative_workflow_tasks
+   creative_workflow_issues
    troubleshoot
    developers
    contributing
