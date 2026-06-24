@@ -35,15 +35,15 @@ GitHub issues later.
      - Depends on
      - Maps to
    * - P0
-     - Inventory clip transform, properties, export, and AI code paths
+     - Inventory the current timeline, properties, export, keyframe, and color surfaces
      - None
      - CW-01
    * - P0
-     - Define project canvas, clip framing, export, and MCP state boundaries
+     - Freeze the project canvas, clip, export, and MCP state boundaries
      - Inventory issue above
      - CW-02
    * - P0
-     - Decide which controls stay clip-local and which become canvas-level
+     - Decide which current actions stay clip-local and which become canvas-level
      - State boundaries issue
      - CW-03
    * - P0
@@ -59,11 +59,11 @@ GitHub issues later.
      - State boundaries issue, canvas/framing issue
      - CW-08
    * - P1
-     - Add property section collapse, favorites, and reset actions
+     - Add property section collapse, ``Reset Clip``, and color-scope labels
      - Properties grouping issue
      - CW-09, CW-10, CW-11
    * - P1
-     - Redesign the export dialog around size, codec, and quality
+     - Redesign the export dialog around size, codec, quality, and processor
      - State boundaries issue
      - CW-12, CW-13
    * - P1

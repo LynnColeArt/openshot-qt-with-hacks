@@ -62,6 +62,26 @@ Those strengths are worth preserving. The goal is not to replace them. The goal
 is to separate concerns so the editor can handle framing, animation, export, and
 AI-assisted pairing without making every problem look the same.
 
+Current partial support
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The repository already has several partial surfaces that should be treated as
+reuse points instead of being redesigned from scratch:
+
+- the timeline menu already exposes ``No Transform``, ``Reset Layout``,
+  ``Reset Look``, color presets, and ``Adjust Colors``,
+- the properties dock already special-cases ``colorgrade_curve`` and
+  ``colorgrade_wheels``,
+- the color-grade editor already provides scoped wheels rows plus reset and
+  enable controls,
+- the keyframe UI already supports drag, delete, interpolation, and nested
+  color-grade keyframes,
+- and the exporter already has width, height, codec, quality, and backend
+  detection plumbing.
+
+These are partial surfaces, not the final abstraction, but they prove the app
+already has the right seams in place.
+
 The missing abstractions
 ------------------------
 
@@ -85,6 +105,9 @@ Properties by category
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The properties dock should not read like a raw schema dump.
+
+The user also wants a right-click ``Reset Clip`` action that clears clip-
+assigned state without changing timing or crop.
 
 Most users will never touch most fields, so the panel should be organized around
 intent:

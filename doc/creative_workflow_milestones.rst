@@ -25,6 +25,10 @@ Creative Workflow Milestones
 This page turns :ref:`creative_workflow_plan_ref` into a compact milestone
 table. The estimates are sequencing aids, not commitments.
 
+The repository already has partial reset, color-grade, keyframe, and export
+surfaces. The milestones below assume those seams are being reused rather than
+replaced.
+
 .. list-table::
    :widths: 12 26 22 14 26
    :header-rows: 1
@@ -38,7 +42,8 @@ table. The estimates are sequencing aids, not commitments.
      - Discovery and contracts
      - None
      - Small
-     - State boundaries are written down and reviewed.
+     - State boundaries are written down, reviewed, and matched to the current
+       partial surfaces.
    * - M2
      - Framing and canvas
      - M1
@@ -48,7 +53,8 @@ table. The estimates are sequencing aids, not commitments.
      - Properties by intent
      - M1, M2
      - Medium
-     - Common controls are grouped and the noisy fields are no longer flat.
+     - Common controls are grouped, ``Reset Clip`` is defined, and the noisy
+       fields are no longer flat.
    * - M4
      - Exporter redesign
      - M1

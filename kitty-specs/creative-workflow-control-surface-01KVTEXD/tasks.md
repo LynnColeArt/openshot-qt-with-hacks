@@ -45,9 +45,9 @@
 
 ### Included Subtasks
 
-- [ ] T001 Inventory the current surfaces and note the existing code paths
-- [ ] T002 Freeze the boundary matrix for project canvas, clip state, export state, and MCP state
-- [ ] T003 Capture rollout risks, validation checks, and open questions
+- [x] T001 Inventory the current surfaces and note the existing code paths
+- [x] T002 Freeze the boundary matrix for project canvas, clip state, export state, and MCP state
+- [x] T003 Capture rollout risks, validation checks, and open questions
 
 ### Implementation Notes
 
