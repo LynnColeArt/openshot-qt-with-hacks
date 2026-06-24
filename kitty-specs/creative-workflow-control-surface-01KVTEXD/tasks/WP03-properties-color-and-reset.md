@@ -30,7 +30,7 @@ history:
 - at: '2026-06-23T14:56:36Z'
   actor: system
   action: Prompt generated via /spec-kitty.tasks
-agent_profile: 'reviewer-renata'
+agent_profile: ''
 authoritative_surface: src/windows/views/timeline.py
 create_intent: []
 execution_mode: code_change
@@ -41,7 +41,7 @@ owned_files:
 - src/windows/color_grade_editor.py
 - src/classes/color_presets.py
 - src/windows/views/menu.py
-role: 'reviewer'
+role: ''
 tags: []
 task_type: implement
 ---
