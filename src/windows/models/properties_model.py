@@ -1633,14 +1633,59 @@ class PropertiesModel(updates.UpdateInterface):
                     # Clear caption editor
                     get_app().window.CaptionTextLoaded.emit("", None)
 
+                    try:
+                        from windows.views.properties_tableview import (
+                            group_properties_by_intent,
+                            property_section_metadata,
+                        )
+                    except Exception:
+                        group_properties_by_intent = None
+                        property_section_metadata = None
+
+                    def _append_section_row(section_name):
+                        section_label = section_name
+                        if property_section_metadata:
+                            section_label = property_section_metadata(section_name)["label"]
+                        section_text = _(section_label)
+                        label_item = QStandardItem(section_text)
+                        label_item.setData((section_name, {
+                            "name": section_text,
+                            "type": "section",
+                            "readonly": True,
+                            "points": 0,
+                            "interpolation": openshot.LINEAR,
+                            "max": 0.0,
+                            "min": 0.0,
+                            "value": "",
+                        }))
+                        label_item.setFlags(Qt.ItemIsEnabled)
+                        label_item.setBackground(QColor(48, 48, 48))
+
+                        value_item = QStandardItem("")
+                        value_item.setFlags(Qt.ItemIsEnabled)
+                        value_item.setBackground(QColor(48, 48, 48))
+                        self.model.appendRow([label_item, value_item])
+
                 # Loop through properties, and build/update the model
-                for property in all_properties.items():
-                    if property[0] in tracked_object_properties:
-                        # Add/update tracked object property
-                        self.set_property(property, filter, c, item_type, object_id=tracked_object_id)
-                    else:
-                        # Add/update base property
-                        self.set_property(property, filter, c, item_type)
+                if self.new_item and callable(group_properties_by_intent):
+                    grouped_properties = group_properties_by_intent(all_properties, item_type)
+                    for section_name, section_properties in grouped_properties.items():
+                        _append_section_row(section_name)
+                        for property in section_properties:
+                            if property[0] in tracked_object_properties:
+                                # Add/update tracked object property
+                                self.set_property(property, filter, c, item_type, object_id=tracked_object_id)
+                            else:
+                                # Add/update base property
+                                self.set_property(property, filter, c, item_type)
+                else:
+                    for property in all_properties.items():
+                        if property[0] in tracked_object_properties:
+                            # Add/update tracked object property
+                            self.set_property(property, filter, c, item_type, object_id=tracked_object_id)
+                        else:
+                            # Add/update base property
+                            self.set_property(property, filter, c, item_type)
 
                 # After first render, future calls will update in place
                 self.new_item = False

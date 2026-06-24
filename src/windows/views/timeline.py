@@ -169,6 +169,7 @@ from classes.clip_utils import (
     clamp_timing_to_media,
     apply_file_caption_to_clip,
     is_single_image_media,
+    reset_clip_data,
 )
 from .retime import retime_clip
 from .repeat import apply_repeat, reset_repeat, RepeatDialog
@@ -2099,6 +2100,9 @@ class TimelineView(updates.UpdateInterface, ViewClass):
 
         # Properties
         menu.addSeparator()
+        Reset_Clip = menu.addAction(_("Reset Clip"))
+        Reset_Clip.triggered.connect(partial(self.Reset_Clip_Triggered, clip_ids))
+        menu.addSeparator()
         menu.addAction(self.window.actionProperties)
 
         # Remove Clip Menu
@@ -2675,6 +2679,26 @@ class TimelineView(updates.UpdateInterface, ViewClass):
             original_clip_data = json.loads(json.dumps(clip.data))
             clip.data["effects"] = filtered_effects
             self.update_clip_data(clip.data, only_basic_props=False, ignore_reader=True)
+            get_app().updates.apply_last_action_to_history(original_clip_data)
+
+    def Reset_Clip_Triggered(self, clip_ids):
+        """Reset clip-specific effects and keyframes while preserving crop and timing."""
+        tid = str(uuid.uuid4())
+        for clip_id in clip_ids:
+            clip = Clip.get(id=clip_id)
+            if not clip:
+                continue
+
+            original_clip_data = json.loads(json.dumps(clip.data))
+            if not reset_clip_data(clip.data, preserve_crop=True):
+                continue
+
+            self.update_clip_data(
+                clip.data,
+                only_basic_props=False,
+                ignore_reader=True,
+                transaction_id=tid,
+            )
             get_app().updates.apply_last_action_to_history(original_clip_data)
 
     def _ensure_color_grade_effect(self, clip):

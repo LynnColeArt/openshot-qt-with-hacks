@@ -25,6 +25,7 @@
  """
 
 import logging
+import copy
 import json
 from fractions import Fraction
 from typing import Any, Mapping, Optional, Tuple
@@ -536,3 +537,76 @@ def clip_time_bounds(clip_data: Any, existing_clip: Any = None) -> Tuple[float, 
         max_duration = 0.0
 
     return max_duration, max_frames
+
+
+def _identity_keyframe(frame_number: int, value: float, interpolation: int = openshot.LINEAR) -> dict:
+    """Return a single-point keyframe payload."""
+    return {
+        "Points": [{
+            "co": {"X": float(frame_number), "Y": float(value)},
+            "interpolation": int(interpolation),
+        }]
+    }
+
+
+def _is_crop_effect(effect: Any) -> bool:
+    """Return True when an effect payload represents the clip crop effect."""
+    if not isinstance(effect, Mapping):
+        return False
+    class_name = str(effect.get("class_name", "") or effect.get("type", "")).strip().lower()
+    return class_name == "crop"
+
+
+def reset_clip_data(clip_data: Any, preserve_crop: bool = True) -> bool:
+    """Reset clip-assigned state while preserving timing and optional crop."""
+    if not isinstance(clip_data, Mapping):
+        return False
+
+    changed = False
+
+    effects = clip_data.get("effects")
+    if isinstance(effects, list):
+        if preserve_crop:
+            filtered_effects = [copy.deepcopy(effect) for effect in effects if _is_crop_effect(effect)]
+        else:
+            filtered_effects = []
+        if filtered_effects != effects:
+            clip_data["effects"] = filtered_effects
+            changed = True
+    elif preserve_crop and effects:
+        if _is_crop_effect(effects):
+            clip_data["effects"] = [copy.deepcopy(effects)]
+        else:
+            clip_data["effects"] = []
+        changed = True
+    elif not preserve_crop and effects:
+        clip_data["effects"] = []
+        changed = True
+
+    identity_payloads = {
+        "scale": openshot.SCALE_FIT,
+        "gravity": openshot.GRAVITY_CENTER,
+        "alpha": _identity_keyframe(1, 1.0),
+        "scale_x": _identity_keyframe(1, 1.0),
+        "scale_y": _identity_keyframe(1, 1.0),
+        "location_x": _identity_keyframe(1, 0.0),
+        "location_y": _identity_keyframe(1, 0.0),
+        "rotation": _identity_keyframe(1, 0.0),
+        "shear_x": _identity_keyframe(1, 0.0),
+        "shear_y": _identity_keyframe(1, 0.0),
+        "origin_x": _identity_keyframe(1, 0.5),
+        "origin_y": _identity_keyframe(1, 0.5),
+        "time": _identity_keyframe(1, 1.0),
+        "volume": _identity_keyframe(1, 1.0),
+        "has_audio": _identity_keyframe(1, -1.0, openshot.CONSTANT),
+        "has_video": _identity_keyframe(1, -1.0, openshot.CONSTANT),
+        "channel_filter": _identity_keyframe(1, -1.0, openshot.CONSTANT),
+        "channel_mapping": _identity_keyframe(1, -1.0, openshot.CONSTANT),
+    }
+
+    for key, value in identity_payloads.items():
+        if clip_data.get(key) != value:
+            clip_data[key] = copy.deepcopy(value)
+            changed = True
+
+    return changed

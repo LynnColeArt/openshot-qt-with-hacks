@@ -30,6 +30,7 @@ import os
 import json
 import functools
 import math
+from collections import OrderedDict
 from operator import itemgetter
 import uuid
 
@@ -76,6 +77,104 @@ from .menu import StyledContextMenu, populate_keyframe_context_menu
 import openshot
 
 
+PROPERTY_SECTION_ORDER = (
+    "Timing",
+    "Transform",
+    "Color",
+    "Audio",
+    "Effects",
+    "Source",
+    "Advanced",
+)
+
+_TIMING_KEYS = {"position", "start", "end", "duration", "time"}
+_TRANSFORM_KEYS = {
+    "alpha",
+    "gravity",
+    "location_x",
+    "location_y",
+    "origin_x",
+    "origin_y",
+    "rotation",
+    "scale",
+    "scale_x",
+    "scale_y",
+    "shear_x",
+    "shear_y",
+}
+_COLOR_KEYS = {"color", "wave_color", "colorgrade_curve", "colorgrade_wheels"}
+_AUDIO_KEYS = {"channel_filter", "channel_mapping", "mute", "volume"}
+_SOURCE_KEYS = {"mask_reader", "reader"}
+
+
+def property_section_metadata(section_name):
+    """Return the display and default expansion state for one property section."""
+    return {
+        "label": section_name,
+        "collapsed": section_name == "Advanced",
+    }
+
+
+def property_section_for(property_key, property_meta=None, item_type=None):
+    """Map one property row to a creator-friendly section."""
+    property_key = str(property_key or "").strip()
+    property_type = str((property_meta or {}).get("type") or "").strip().lower()
+    item_type = str(item_type or "").strip().lower()
+
+    if property_type in _COLOR_KEYS or property_key in _COLOR_KEYS:
+        return "Color"
+    if property_key in _TIMING_KEYS:
+        return "Timing"
+    if property_key in _TRANSFORM_KEYS:
+        return "Transform"
+    if property_key in _AUDIO_KEYS:
+        return "Audio"
+    if property_type == "reader" or property_key in _SOURCE_KEYS:
+        return "Source"
+    if item_type in {"effect", "transition"}:
+        return "Effects"
+    return "Advanced"
+
+
+def group_properties_by_intent(properties, item_type=None):
+    """Group an ordered property mapping into UI sections."""
+    grouped = OrderedDict((section, []) for section in PROPERTY_SECTION_ORDER)
+    for property_key, property_meta in properties.items():
+        section = property_section_for(property_key, property_meta, item_type)
+        grouped.setdefault(section, []).append((property_key, property_meta))
+    return OrderedDict(
+        (section, entries)
+        for section, entries in grouped.items()
+        if entries
+    )
+
+
+def color_grade_scope_label(selection):
+    """Return the visible scope label for the color grading dock/dialog."""
+    if isinstance(selection, int):
+        count = selection
+    else:
+        try:
+            count = len(selection)
+        except TypeError:
+            count = 0
+
+    if count <= 0:
+        return "Timeline"
+    if count == 1:
+        return "Clip"
+    return "Selection"
+
+
+def color_grade_scope_title(base_title, selection):
+    """Return a title string that makes the color grading scope explicit."""
+    base_title = str(base_title or "").strip()
+    scope_label = color_grade_scope_label(selection)
+    if base_title:
+        return f"{base_title} - {scope_label}"
+    return scope_label
+
+
 class PropertyDelegate(QItemDelegate):
     def __init__(self, parent=None, *args, **kwargs):
 
@@ -103,6 +202,12 @@ class PropertyDelegate(QItemDelegate):
             selected_label = model.item(row, 0)
             selected_value = model.item(row, 1)
             cur_property = selected_label.data()
+
+            if not isinstance(cur_property, tuple) or not isinstance(cur_property[1], dict):
+                return super().paint(painter, option, index)
+
+            if cur_property[1].get("type") == "section":
+                return super().paint(painter, option, index)
 
             # Get min/max values for this property
             property_type = cur_property[1]["type"]
@@ -865,6 +970,7 @@ class PropertiesTableView(QTableView):
     def _update_color_grade_wheels_enabled(self, selection=None):
         if selection is None:
             selection = getattr(self, "current_selection", [])
+        self._update_color_grade_wheels_title()
         if self._selection_is_color_grade(selection):
             self.color_grade_wheels_panel.setEnabled(True)
         else:
@@ -888,6 +994,7 @@ class PropertiesTableView(QTableView):
         """Refresh the visible wheels dock from current model data after external edits."""
         if not hasattr(self, "color_grade_wheels_dock") or not self.color_grade_wheels_dock.isVisible():
             return
+        self._update_color_grade_wheels_title()
         if not self._selection_is_color_grade(getattr(self, "current_selection", [])):
             self._set_color_grade_wheels_unbound()
             return
@@ -921,6 +1028,7 @@ class PropertiesTableView(QTableView):
         """Show neutral disabled wheels when no editable ColorGrade effect is bound."""
         if not hasattr(self, "color_grade_wheels_panel"):
             return
+        self._update_color_grade_wheels_title()
         self.color_grade_wheels_panel.blockSignals(True)
         self.color_grade_wheels_panel.set_frame_number(self.clip_properties_model.frame_number)
         self.color_grade_wheels_panel.set_wheels_data(self._disabled_color_grade_wheels_data())
@@ -928,6 +1036,7 @@ class PropertiesTableView(QTableView):
         self.color_grade_wheels_panel.blockSignals(False)
 
     def _activate_color_grade_wheels_session(self, item, property_key, wheels_data):
+        self._update_color_grade_wheels_title()
         session = self.live_property_session or {}
         if session.get("property_type") == "colorgrade_wheels":
             if session.get("item") is item and session.get("property_key") == property_key:
@@ -1320,7 +1429,10 @@ class PropertiesTableView(QTableView):
         property_key = cur_property[0]
         dialog = ColorGradeCurveDialog(curve_data, cur_property[1].get("channel", "all"),
                                        self.clip_properties_model.frame_number, self.win,
-                                       title=cur_property[1].get("name"))
+                                       title=color_grade_scope_title(
+                                           cur_property[1].get("name"),
+                                           getattr(self, "current_selection", []),
+                                       ))
         item = self.selected_item
         dialog._property_key = property_key
         dialog._item_data = copy.deepcopy(item.data()) if item else None
@@ -1452,6 +1564,8 @@ class PropertiesTableView(QTableView):
 
         # Skip any read-only properties
         cur_property = selected_label.data()
+        if not isinstance(cur_property, tuple) or not isinstance(cur_property[1], dict):
+            return
         readonly = cur_property[1]["readonly"]
         if readonly:
             return
@@ -2088,6 +2202,7 @@ class PropertiesTableView(QTableView):
         self.color_grade_wheels_panel.dragStarted.connect(self._wheels_drag_started)
         self.color_grade_wheels_panel.dragFinished.connect(self._wheels_drag_finished)
         self.color_grade_wheels_dock.visibilityChanged.connect(self._color_grade_wheels_visibility_changed)
+        self._update_color_grade_wheels_title()
 
     def _show_scope_docks_if_hidden(self):
         """Show scope docks if currently hidden."""
@@ -2096,6 +2211,15 @@ class PropertiesTableView(QTableView):
             dock = getattr(win, attr, None)
             if dock and not dock.isVisible():
                 dock.show()
+
+    def _update_color_grade_wheels_title(self):
+        """Update the color wheels dock title with the current edit scope."""
+        if not hasattr(self, "color_grade_wheels_dock"):
+            return
+        _ = get_app()._tr
+        self.color_grade_wheels_dock.setWindowTitle(
+            color_grade_scope_title(_("Color Wheels"), getattr(self, "current_selection", []))
+        )
 
     def _ensure_color_grade_wheels_dock_attached(self):
         if self.win.dockWidgetArea(self.color_grade_wheels_dock) == Qt.NoDockWidgetArea:
@@ -2107,6 +2231,7 @@ class PropertiesTableView(QTableView):
             self.color_grade_wheels_dock.setFloating(False)
 
     def _color_grade_wheels_visibility_changed(self, visible):
+        self._update_color_grade_wheels_title()
         if visible:
             if self.win.dockWidgetArea(self.color_grade_wheels_dock) == Qt.NoDockWidgetArea:
                 self.win.addDocks([self.color_grade_wheels_dock], Qt.RightDockWidgetArea)
