@@ -1,77 +1,55 @@
-# Creative Workflow State Boundaries
+# Data Model: Creative Workflow Control Surface
 
-This document freezes the boundary matrix for the mission. Later work packages
-should treat it as the contract for what belongs where.
+## Core entities
 
-## Core Rule
+### Project canvas
 
-If a change affects project framing, it belongs to project canvas state.
-If a change affects a specific clip, it belongs to clip state.
-If a change only describes the current selection, it belongs to UI/session
-state.
-If a change only affects export output, it belongs to export state.
-If a change happens through the agent bridge, it must stay local-first and
-explicit about writes.
+- Represents the project-wide frame and aspect-ratio geometry.
+- Stores width, height, aspect-ratio behavior, and fit/fill/anchor choices.
+- Must remain distinct from any individual clip transform.
 
-## State Matrix
+### Clip state
 
-| Surface | Owned state | Persistence | Writable by | Notes |
-|---------|-------------|-------------|-------------|-------|
-| Project canvas | Canvas size, aspect ratio, framing mode, anchor, fit, fill, and project-level layout rules | Project document / timeline-level settings | Canvas/framing UI | This is the new first-class frame surface. It must not become a second copy of clip transforms. |
-| Clip state | Trim, timing, placement, crop, transform, look presets, effects, color adjustments, and clip keyframes | Clip data | Clip transforms, properties, keyframe tools, reset actions | `Reset Clip` should clear this category except for the timing/trim/crop/placement parts the user wants to keep. |
-| Selection state | Selected clips, selected properties, active scope, and current edit target | Session-only | Timeline and properties UI | Never persist this as project data. It should be cheap to change and safe to discard. |
-| Export state | Width, height, codec, quality, target mode, and processor choice | Export dialog / export profile | Export UI | This is a session or profile choice, not a project-canvas choice. |
-| MCP state | Local media paths, metadata, representative frames, and confirmed action intent | Bridge session | MCP adapter / pairing bridge | Read access should be the default. Writes must be explicit and confirmed. |
+- Represents per-clip state such as position, scale, rotation, crop, effects,
+  and keyframes.
+- `Reset Clip` clears clip-assigned state but keeps timing and crop unless the
+  user explicitly chooses a different action.
 
-## Scope Labels
+### Property group
 
-The UI and docs should use the same scope language everywhere:
+- Represents an inspector section such as Common, Framing, Color, Motion,
+  Audio, Effects, or Advanced.
+- Groups are a UI organization concept, not a new persistence layer.
 
-- `clip`
-- `selection`
-- `project` or `timeline`
-- `export`
-- `local path`
+### Color scope
 
-Those labels should be visible at the point where the user is making the
-change.
+- Represents whether a color-grade change applies to a selected clip, a
+  selection, or the whole project/timeline.
+- The UI needs to state this scope clearly at the point of editing.
 
-## Reset Semantics
+### Export profile
 
-### Existing partial resets
+- Represents width, height, codec, quality, and processor choice.
+- The exporter should show the profile in a way that makes tradeoffs obvious.
 
-- `No Transform` currently resets rotation, crop, and layout together.
-- `Reset Look` currently clears look-managed effects.
-- `Reset Color Grade` currently restores the curve or wheels payload while
-  preserving enabled keyframes.
+### Pairing bridge session
 
-### Planned `Reset Clip`
+- Represents a local inspection/write session used by MCP.
+- Reads local media and project state first, then applies explicit confirmed
+  edits only when the user approves them.
 
-`Reset Clip` should:
+## Boundary rules
 
-- preserve timeline placement, timing, trim, and crop,
-- clear clip-assigned effects and keyframes,
-- clear look and color adjustments assigned to the clip,
-- clear other clip-local settings that are not part of timing or crop,
-- and complete as a single undo-friendly action.
+- Project canvas changes should not be stored as clip animation hacks.
+- Clip reset must not alter timeline timing.
+- Export controls should map onto the current export backend before any deeper
+  render-engine refactor.
+- MCP writes should be opt-in and local-first.
 
-It should not change the project canvas or export settings.
+## Canonical user questions
 
-## Reversibility Rules
-
-- Any destructive-looking operation should be one undo step if the UI can
-  reasonably support it.
-- Read-only surfaces should stay read-only until a write action is explicitly
-  confirmed.
-- The agent bridge must never infer permission from a dropped file path alone.
-
-## Scope Examples
-
-- Changing aspect ratio for the whole composition belongs to the project
-  canvas.
-- Nudging one clip into place belongs to clip state.
-- Choosing a GPU encoder belongs to export state.
-- Inspecting a local video path belongs to MCP state.
-- Selecting a set of clips so the properties dock knows what to show belongs to
-  selection state.
-
+- "Is this project frame or clip transform?"
+- "Which scope am I editing right now?"
+- "What am I losing if I reset this clip?"
+- "How big, how compressed, and how encoded will this export be?"
+- "Can my agent inspect the same local state I am seeing?"

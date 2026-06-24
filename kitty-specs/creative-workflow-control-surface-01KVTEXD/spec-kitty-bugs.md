@@ -1,32 +1,38 @@
-# Spec Kitty Bug Notes
+# Spec Kitty Notes for Robert
 
-These are the issues worth sending to Robert while we are working through the
-mission.
+## Observed issue 1: Global launcher path fails on `tomli_w`
 
-## 1. Global launcher fails to start
+While checking the updated Spec Kitty install, the machine-wide launcher at
+`/home/lynn/.local/bin/spec-kitty` failed with:
 
-- Repro: run `spec-kitty upgrade --agent-check --json`
-- Result: `ModuleNotFoundError: No module named 'tomli_w'`
-- Impact: the global launcher cannot start, so the project-local runtime is the
-  reliable path for mission commands.
-- Workaround: use `uv run --project /home/lynn/projects/spec-kitty python -m specify_cli ...`
+- `ModuleNotFoundError: No module named 'tomli_w'`
 
-## 2. Finalize-tasks collided with an already-checked-out branch
+The same environment could import `tomli_w` from the updated Spec Kitty repo
+venv, which suggests the launcher is resolving a stale or mismatched Python
+environment instead of the repo-local one.
 
-- Repro: attempt mission finalization when the coordination branch is already
-  checked out in the repo root.
-- Result: the worktree creation step fails unless the coordination workspace is
-  allowed to force-add the branch.
-- Impact: mission finalization gets blocked before the lane worktree exists.
-- Status: fixed locally in the Spec Kitty checkout by allowing the coordination
-  workspace to use `git worktree add --force` in that collision case.
+## Observed issue 2: `verify-setup` reports corrupt lane metadata
 
-## 3. Setup verification reported stale lane and skill state
+`uv run spec-kitty verify-setup` completed, but it warned about:
 
-- Repro: run the Spec Kitty setup verification flow after the launcher issue.
-- Result: `lanes.json` and managed skill metadata can show as corrupt or out of
-  sync.
-- Impact: the tooling can look unhealthy even when the underlying mission docs
-  are fine.
-- Note: treat this as generated-state hygiene, not an OpenShot product bug.
+- a corrupt `lanes.json` entry in `064-complete-mission-identity-cutover`
+- managed skill drift / missing files in the generated `.agents` and `.claude`
+  surfaces
 
+That may be expected cleanup drift, but it is worth a look if the runtime is
+supposed to be fully self-healing after a version refresh.
+
+## Observed issue 3: `finalize-tasks` fails when the coordination branch is already checked out
+
+The dry-run validator passed, but the real `finalize-tasks` command failed when
+it tried to create a coordination worktree for `kitty/mission-creative-workflow-control-surface-01KVTEXD`.
+The error was:
+
+- `git worktree add /home/lynn/projects/openshot-qt/.worktrees/creative-workflow-control-surface-01KVTEXD-coord kitty/mission-creative-workflow-control-surface-01KVTEXD`
+- exit status `128`
+
+This looks like a topology mismatch: the branch is already checked out in the
+root worktree, so the task finalizer cannot create a second worktree for the
+same branch. The validator should probably detect that state and either reuse
+the existing checkout or emit a clearer instruction before attempting `git
+worktree add`.

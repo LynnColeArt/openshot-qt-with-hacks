@@ -1,67 +1,42 @@
-# Creative Workflow Quickstart
+# Quickstart: Creative Workflow Control Surface
 
-This WP is documentation and contract freezing only. There are no product code
-tests to run here. The goal is to make sure the mission artifacts stay aligned
-with the current repository reality.
+## Validation scenarios
 
-## Read First
+### 1. Normalize mismatched AI-generated clips
 
-Before changing anything else, read these files together:
+1. Open a project with several clips that are nearly aligned but not identical.
+2. Use the project canvas/framing controls instead of keyframing every clip.
+3. Confirm the common frame is visible and reversible.
 
-- `spec.md`
-- `plan.md`
-- `research.md`
-- `data-model.md`
-- `doc/creative_workflow_vision.rst`
-- `doc/creative_workflow_plan.rst`
-- `doc/creative_workflow_tasks.rst`
+### 2. Find and edit effects without hunting
 
-If those files use different terminology for the same concept, stop and fix
-the wording before moving on.
+1. Select a clip with effects attached.
+2. Open the properties dock.
+3. Confirm the categories are organized by intent and that advanced controls do
+   not dominate the panel.
 
-## Mission Sanity Checks
+### 3. Reset a clip without losing timing
 
-1. Confirm that the current code inventory matches the research notes.
-2. Confirm that the boundary matrix distinguishes project canvas state from
-   clip state.
-3. Confirm that `Reset Clip` is described as preserving timing and crop.
-4. Confirm that export quality is described as a real tradeoff, not only as
-   `Low`, `Med`, or `High`.
-5. Confirm that the MCP surface is local-first and confirmation-based.
+1. Right-click a clip.
+2. Choose `Reset Clip`.
+3. Confirm clip effects and keyframes are removed while timing and crop remain.
 
-## Useful Commands
+### 4. Export with clearer tradeoffs
 
-These commands are helpful when refreshing the inventory or checking that the
-mission artifacts still resolve correctly.
+1. Open the exporter.
+2. Confirm width, height, codec, quality, and processor are visible.
+3. Confirm the quality control feels like a fine-grained slider rather than a
+   low/medium/high preset.
 
-```bash
-uv run --project /home/lynn/projects/spec-kitty python -m specify_cli agent context resolve --action tasks --mission creative-workflow-control-surface-01KVTEXD --json
-```
+### 5. Pair locally with an agent
+
+1. Provide a local image or video path.
+2. Inspect the file and project state through the pairing surface.
+3. Confirm that any write action is explicit and confirmed.
+
+## Repository validation commands
 
 ```bash
-uv run --project /home/lynn/projects/spec-kitty python -m specify_cli agent mission check-prerequisites --json --paths-only --include-tasks --mission creative-workflow-control-surface-01KVTEXD
+python3 -m unittest discover -s src/tests -t src/tests --quiet
+cd doc && make html
 ```
-
-```bash
-rg -n "No_Transform_Triggered|Reset_Look_Triggered|Adjust_Colors_Triggered" src/windows/views/timeline.py
-rg -n "colorgrade_curve|colorgrade_wheels|Reset_Color_Grade_Action_Triggered" src/windows/views/properties_tableview.py
-rg -n "calculate_all_formats_bitrate|cboSimpleQuality|txtWidth|txtHeight" src/windows/export.py
-```
-
-## Scenario Validation
-
-- A user should be able to see that the app already has partial reset and
-  color-grade support.
-- A future `Reset Clip` action should not be mistaken for `No Transform` or
-  `Reset Look`.
-- The plan should make it obvious which settings are clip-local and which ones
-  are project-level.
-- The exporter discussion should stay focused on width, height, codec,
-  quality, and processor choice.
-
-## Tooling Note
-
-The global `spec-kitty` launcher in this environment still errors on missing
-`tomli_w`. Use the project-local runtime shown above when you need a reliable
-command path.
-
