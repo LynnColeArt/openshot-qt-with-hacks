@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "mission_slug": "creative-workflow-control-surface-01KVTEXD",
+  "mission_id": "01KVTEXDY2799KPQPY8MD3NTET",
+  "mission_branch": "kitty/mission-creative-workflow-control-surface-01KVTEXD",
+  "target_branch": "develop",
+  "lanes": [
+    {
+      "lane_id": "lane-planning",
+      "wp_ids": [
+        "WP01"
+      ],
+      "write_scope": [
+        "doc/creative_workflow_issues.rst",
+        "doc/creative_workflow_mission_breakdown.rst",
+        "doc/creative_workflow_plan.rst",
+        "doc/creative_workflow_tasks.rst",
+        "doc/creative_workflow_vision.rst",
+        "doc/index.rst"
+      ],
+      "predicted_surfaces": [
+        "planning"
+      ],
+      "depends_on_lanes": [],
+      "parallel_group": 0
+    },
+    {
+      "lane_id": "lane-a",
+      "wp_ids": [
+        "WP02"
+      ],
+      "write_scope": [
+        "src/classes/clip_utils.py",
+        "src/windows/views/timeline_backend/paint/keyframepanel.py",
+        "src/windows/views/timeline_backend/project_canvas.py",
+        "src/windows/views/timeline_backend/qwidget/base.py",
+        "src/windows/views/timeline_backend/qwidget/keyframe.py",
+        "src/windows/views/timeline_backend/qwidget/keyframe_panel.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "app-shell"
+      ],
+      "depends_on_lanes": [
+        "lane-planning"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-b",
+      "wp_ids": [
+        "WP03"
+      ],
+      "write_scope": [
+        "src/classes/color_presets.py",
+        "src/windows/color_grade_editor.py",
+        "src/windows/views/menu.py",
+        "src/windows/views/properties_tableview.py",
+        "src/windows/views/timeline.py"
+      ],
+      "predicted_surfaces": [
+        "api",
+        "legacy-cleanup",
+        "tracker-integration"
+      ],
+      "depends_on_lanes": [
+        "lane-planning"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-c",
+      "wp_ids": [
+        "WP04"
+      ],
+      "write_scope": [
+        "src/windows/export.py",
+        "src/windows/ui/export.ui"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [
+        "lane-planning"
+      ],
+      "parallel_group": 1
+    },
+    {
+      "lane_id": "lane-d",
+      "wp_ids": [
+        "WP05"
+      ],
+      "write_scope": [
+        "src/classes/mcp_bridge/__init__.py",
+        "src/classes/mcp_bridge/bridge.py",
+        "src/classes/mcp_bridge/inspectors.py",
+        "src/classes/mcp_bridge/resources.py",
+        "src/windows/mcp_bridge_dialog.py"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [
+        "lane-a",
+        "lane-c",
+        "lane-planning"
+      ],
+      "parallel_group": 2
+    },
+    {
+      "lane_id": "lane-e",
+      "wp_ids": [
+        "WP06"
+      ],
+      "write_scope": [
+        "doc/creative_workflow_issues.rst",
+        "doc/creative_workflow_milestones.rst",
+        "doc/creative_workflow_mission_breakdown.rst",
+        "doc/creative_workflow_plan.rst",
+        "doc/creative_workflow_tasks.rst",
+        "doc/creative_workflow_vision.rst",
+        "src/tests/test_color_grade_editor.py",
+        "src/tests/test_export.py",
+        "src/tests/test_mcp_bridge.py",
+        "src/tests/test_timeline_helpers.py"
+      ],
+      "predicted_surfaces": [
+        "api"
+      ],
+      "depends_on_lanes": [
+        "lane-a",
+        "lane-b",
+        "lane-c",
+        "lane-d",
+        "lane-planning"
+      ],
+      "parallel_group": 3
+    }
+  ],
+  "computed_at": "2026-06-24T02:39:33.600767+00:00",
+  "computed_from": "dependency_graph+ownership",
+  "planning_artifact_wps": [
+    "WP01"
+  ]
+}
