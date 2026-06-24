@@ -2206,6 +2206,96 @@ class TimelineHelperTests(unittest.TestCase):
             helper.updated,
         )
 
+    def test_reset_clip_trigger_preserves_timing_and_crop(self):
+        timeline_module = self.timeline_module
+        clip = types.SimpleNamespace(
+            id="C1",
+            data={
+                "id": "C1",
+                "reader": {"has_video": True, "has_audio": True},
+                "position": 12.0,
+                "start": 3.0,
+                "end": 15.0,
+                "duration": 12.0,
+                "scale": openshot.SCALE_CROP,
+                "gravity": openshot.GRAVITY_BOTTOM_RIGHT,
+                "alpha": {"Points": [{"co": {"X": 1, "Y": 0.25}, "interpolation": openshot.LINEAR}]},
+                "scale_x": {"Points": [{"co": {"X": 1, "Y": 1.5}, "interpolation": openshot.LINEAR}]},
+                "scale_y": {"Points": [{"co": {"X": 1, "Y": 1.5}, "interpolation": openshot.LINEAR}]},
+                "location_x": {"Points": [{"co": {"X": 1, "Y": 2.0}, "interpolation": openshot.LINEAR}]},
+                "location_y": {"Points": [{"co": {"X": 1, "Y": -3.0}, "interpolation": openshot.LINEAR}]},
+                "rotation": {"Points": [{"co": {"X": 1, "Y": 22.0}, "interpolation": openshot.LINEAR}]},
+                "shear_x": {"Points": [{"co": {"X": 1, "Y": 0.15}, "interpolation": openshot.LINEAR}]},
+                "shear_y": {"Points": [{"co": {"X": 1, "Y": -0.2}, "interpolation": openshot.LINEAR}]},
+                "origin_x": {"Points": [{"co": {"X": 1, "Y": 0.2}, "interpolation": openshot.LINEAR}]},
+                "origin_y": {"Points": [{"co": {"X": 1, "Y": 0.8}, "interpolation": openshot.LINEAR}]},
+                "volume": {"Points": [{"co": {"X": 1, "Y": 0.35}, "interpolation": openshot.LINEAR}]},
+                "effects": [
+                    {"class_name": "Crop", "id": "crop-1", "resize": True},
+                    {"class_name": "Brightness", "id": "fx-1", "amount": 0.4},
+                ],
+            },
+        )
+
+        class Helper:
+            def __init__(self):
+                self.updates = []
+                self.removals = []
+
+            def get_uuid(self):
+                return "tx-reset-1"
+
+            def _clip_has_visual(self, candidate):
+                return timeline_module.TimelineView._clip_has_visual(self, candidate)
+
+            def removeSelection(self, item_id, item_type):
+                self.removals.append((item_id, item_type))
+
+            def update_clip_data(self, clip_data, **kwargs):
+                self.updates.append((copy.deepcopy(clip_data), dict(kwargs)))
+
+        history = []
+        fake_app = types.SimpleNamespace(
+            updates=types.SimpleNamespace(
+                apply_last_action_to_history=lambda original: history.append(copy.deepcopy(original))
+            )
+        )
+        helper = Helper()
+        original_clip_data = copy.deepcopy(clip.data)
+
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(timeline_module.Clip, "get", return_value=clip))
+            stack.enter_context(patch.object(timeline_module, "get_app", return_value=fake_app))
+            timeline_module.TimelineView.Reset_Clip_Triggered(helper, [clip.id])
+
+        self.assertEqual(clip.data["position"], 12.0)
+        self.assertEqual(clip.data["start"], 3.0)
+        self.assertEqual(clip.data["end"], 15.0)
+        self.assertEqual(clip.data["duration"], 12.0)
+        self.assertEqual(clip.data["effects"], [{"class_name": "Crop", "id": "crop-1", "resize": True}])
+        self.assertEqual(clip.data["scale"], openshot.SCALE_FIT)
+        self.assertEqual(clip.data["gravity"], openshot.GRAVITY_CENTER)
+        self.assertEqual(clip.data["alpha"]["Points"][0]["co"]["Y"], 1.0)
+        self.assertEqual(clip.data["scale_x"]["Points"][0]["co"]["Y"], 1.0)
+        self.assertEqual(clip.data["scale_y"]["Points"][0]["co"]["Y"], 1.0)
+        self.assertEqual(clip.data["location_x"]["Points"][0]["co"]["Y"], 0.0)
+        self.assertEqual(clip.data["location_y"]["Points"][0]["co"]["Y"], 0.0)
+        self.assertEqual(clip.data["rotation"]["Points"][0]["co"]["Y"], 0.0)
+        self.assertEqual(clip.data["shear_x"]["Points"][0]["co"]["Y"], 0.0)
+        self.assertEqual(clip.data["shear_y"]["Points"][0]["co"]["Y"], 0.0)
+        self.assertEqual(clip.data["origin_x"]["Points"][0]["co"]["Y"], 0.5)
+        self.assertEqual(clip.data["origin_y"]["Points"][0]["co"]["Y"], 0.5)
+        self.assertEqual(clip.data["volume"]["Points"][0]["co"]["Y"], 1.0)
+        self.assertEqual(helper.removals, [("fx-1", "effect")])
+        self.assertEqual(len(helper.updates), 1)
+        self.assertEqual(helper.updates[0][1], {
+            "only_basic_props": False,
+            "ignore_reader": True,
+            "transaction_id": "tx-reset-1",
+        })
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0], original_clip_data)
+
     def test_finalize_keyframe_drag_refreshes_waveform_for_volume_curve_changes(self):
         helper = self.make_finalize_keyframe_helper()
         original = {

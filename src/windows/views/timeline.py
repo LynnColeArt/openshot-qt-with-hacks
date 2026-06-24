@@ -2101,6 +2101,9 @@ class TimelineView(updates.UpdateInterface, ViewClass):
         menu.addSeparator()
         menu.addAction(self.window.actionProperties)
 
+        Reset_Clip = menu.addAction(_("Reset Clip"))
+        Reset_Clip.triggered.connect(partial(self.Reset_Clip_Triggered, clip_ids))
+
         # Remove Clip Menu
         menu.addSeparator()
         menu.addAction(self.window.actionRemoveClip)
@@ -2675,6 +2678,64 @@ class TimelineView(updates.UpdateInterface, ViewClass):
             original_clip_data = json.loads(json.dumps(clip.data))
             clip.data["effects"] = filtered_effects
             self.update_clip_data(clip.data, only_basic_props=False, ignore_reader=True)
+            get_app().updates.apply_last_action_to_history(original_clip_data)
+
+    def Reset_Clip_Triggered(self, clip_ids):
+        """Reset clip-side styling and animation while preserving trim, timing, and crop."""
+        tid = self.get_uuid()
+
+        def _default_keyframe(value, interpolation=openshot.BEZIER):
+            return {"Points": [json.loads(openshot.Point(1, value, interpolation).Json())]}
+
+        for clip_id in clip_ids:
+            clip = Clip.get(id=clip_id)
+            if not clip:
+                continue
+
+            original_clip_data = json.loads(json.dumps(clip.data))
+            effects = clip.data.get("effects")
+            kept_effects = []
+            removed_effect_ids = []
+            if isinstance(effects, list):
+                for effect_json in effects:
+                    if isinstance(effect_json, dict) and effect_json.get("class_name") == "Crop":
+                        kept_effects.append(deepcopy(effect_json))
+                    elif isinstance(effect_json, dict):
+                        effect_id = effect_json.get("id")
+                        if effect_id is not None:
+                            removed_effect_ids.append(effect_id)
+                clip.data["effects"] = kept_effects
+            else:
+                clip.data["effects"] = []
+
+            clip.data["volume"] = _default_keyframe(1.0)
+
+            if self._clip_has_visual(clip):
+                clip.data["scale"] = openshot.SCALE_FIT
+                clip.data["gravity"] = openshot.GRAVITY_CENTER
+                clip.data["alpha"] = _default_keyframe(1.0)
+                clip.data["scale_x"] = _default_keyframe(1.0)
+                clip.data["scale_y"] = _default_keyframe(1.0)
+                clip.data["location_x"] = _default_keyframe(0.0)
+                clip.data["location_y"] = _default_keyframe(0.0)
+                clip.data["rotation"] = _default_keyframe(0.0)
+                clip.data["shear_x"] = _default_keyframe(0.0)
+                clip.data["shear_y"] = _default_keyframe(0.0)
+                clip.data["origin_x"] = _default_keyframe(0.5)
+                clip.data["origin_y"] = _default_keyframe(0.5)
+
+            if clip.data == original_clip_data:
+                continue
+
+            for effect_id in removed_effect_ids:
+                self.removeSelection(effect_id, "effect")
+
+            self.update_clip_data(
+                clip.data,
+                only_basic_props=False,
+                ignore_reader=True,
+                transaction_id=tid,
+            )
             get_app().updates.apply_last_action_to_history(original_clip_data)
 
     def _ensure_color_grade_effect(self, clip):
