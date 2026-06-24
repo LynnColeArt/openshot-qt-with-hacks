@@ -24,7 +24,8 @@ subtasks:
 - T011
 phase: Phase 3 - Properties, color, and reset
 assignee: ''
-agent: ''
+agent: "python-pedro"
+shell_pid: "324410"
 history:
 - at: '2026-06-23T14:56:36Z'
   actor: system
@@ -175,3 +176,4 @@ surfaces. Avoid broad refactors outside the UI/state path for this work.
 ## Activity Log
 
 - 2026-06-23T14:56:36Z - system - Prompt created.
+- 2026-06-24T06:16:32Z – python-pedro – shell_pid=324410 – Assigned agent via action command
