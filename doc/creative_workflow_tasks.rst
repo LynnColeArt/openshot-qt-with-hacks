@@ -25,21 +25,26 @@ Creative Workflow Tasks
 This task list decomposes the roadmap in :ref:`creative_workflow_plan_ref`
 into work packages that can be implemented and reviewed one at a time.
 
+The app already has partial support in the timeline, properties, keyframe, and
+export surfaces. The first work package should inventory those seams so later
+work packages can reuse them instead of guessing at the boundaries.
+
 Foundation
 ----------
 
 CW-01
-  Inventory the current clip transform, properties, export, and AI code paths
-  so the new workflow can reuse what already exists instead of guessing at the
-  right seams.
+  Inventory the current clip transform, properties, export, keyframe, color,
+  and AI code paths so the new workflow can reuse what already exists instead
+  of guessing at the right seams.
 
 CW-02
   Write down the data boundaries for project canvas state, clip framing state,
-  export preset state, and MCP state.
+  selection state, export preset state, and MCP state.
 
 CW-03
   Identify which current actions should remain clip-local, which should move to
-  canvas-level controls, and which should remain advanced-only.
+  canvas-level controls, and which should remain advanced-only or
+  scope-limited.
 
 Framing and canvas
 ------------------
@@ -73,8 +78,8 @@ CW-09
   favorite properties.
 
 CW-10
-  Add section-level reset actions so users can undo a category without clearing
-  the entire clip.
+  Add ``Reset Clip`` and section-level reset actions so users can undo a
+  category or the whole clip without losing timing or crop.
 
 CW-11
   Keep the advanced property view available for edge cases, but hide it behind

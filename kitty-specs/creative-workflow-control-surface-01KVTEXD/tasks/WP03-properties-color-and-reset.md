@@ -25,12 +25,12 @@ subtasks:
 phase: Phase 3 - Properties, color, and reset
 assignee: ''
 agent: "python-pedro"
-shell_pid: "324410"
+shell_pid: "505198"
 history:
 - at: '2026-06-23T14:56:36Z'
   actor: system
   action: Prompt generated via /spec-kitty.tasks
-agent_profile: ''
+agent_profile: 'reviewer-renata'
 authoritative_surface: src/windows/views/timeline.py
 create_intent: []
 execution_mode: code_change
@@ -41,7 +41,7 @@ owned_files:
 - src/windows/color_grade_editor.py
 - src/classes/color_presets.py
 - src/windows/views/menu.py
-role: ''
+role: 'reviewer'
 tags: []
 task_type: implement
 ---
@@ -177,3 +177,4 @@ surfaces. Avoid broad refactors outside the UI/state path for this work.
 
 - 2026-06-23T14:56:36Z - system - Prompt created.
 - 2026-06-24T06:16:32Z – python-pedro – shell_pid=324410 – Assigned agent via action command
+- 2026-06-24T07:09:00Z – python-pedro – shell_pid=505198 – Implementation complete; moving WP03 to review.

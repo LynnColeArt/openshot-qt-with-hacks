@@ -38,6 +38,21 @@ The plan is intentionally narrow:
 - redesign export controls so size, codec, quality, and processor are obvious,
 - and add a local pairing surface through MCP.
 
+Current surface snapshot
+------------------------
+
+The plan does not start from a blank slate. OpenShot already has partial
+support in the areas this mission cares about:
+
+- the timeline has reset and color menu actions,
+- the properties dock already knows about color-grade curve and wheels data,
+- the keyframe UI already supports drag, delete, and interpolation,
+- and the exporter already exposes width, height, codec, and quality
+  plumbing.
+
+The plan should reuse those seams and make the boundaries clearer instead of
+inventing new parallel systems.
+
 Non-goals
 ---------
 
@@ -97,8 +112,8 @@ The properties dock should become a categorized inspector instead of a flat
 schema view.
 
 Deliverables
-  Grouped sections, sensible defaults, section reset controls, search, and a
-  better advanced-mode story.
+  Grouped sections, sensible defaults, ``Reset Clip`` and section reset
+  controls, search, and a better advanced-mode story.
 
 Outcome
   Common editing actions become faster, and the deep settings stay available

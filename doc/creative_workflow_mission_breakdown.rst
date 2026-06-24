@@ -39,6 +39,9 @@ Mission boundary
 Keep the existing Qt editor and the existing clip-level editing model. Improve
 the abstraction layers around it instead of rewriting the entire application.
 
+The app already has partial reset, color, keyframe, and export surfaces. WP-1
+should inventory those seams before later work packages change their behavior.
+
 Work packages
 -------------
 
@@ -53,10 +56,13 @@ Dependency
 
 Goal
   Identify which state belongs to the project frame, which belongs to the clip,
-  which belongs to the exporter, and which belongs to the agent surface.
+  which belongs to the exporter, and which belongs to the agent surface while
+  cataloging the current partial implementations.
 
 Exit criteria
-  The team can point at every important setting and say where it lives.
+  The team can point at every important setting and say where it lives, and
+  the current partial surfaces are documented well enough that later WPs do not
+  reinterpret them by accident.
 
 Risk
   If this step is skipped, later UX work will silently reclassify behavior
@@ -94,11 +100,12 @@ Dependency
 
 Goal
   Replace the flat properties dump with categorized sections that match user
-  intent.
+  intent and add ``Reset Clip`` as a safe recovery path.
 
 Exit criteria
-  Common controls are visible quickly, deep controls are still reachable, and
-  the dock no longer reads like an internal schema viewer.
+  Common controls are visible quickly, deep controls are still reachable, the
+  dock no longer reads like an internal schema viewer, and the reset story is
+  explicit about what clip state gets preserved.
 
 Risk
   If categories are too broad, the panel will still feel noisy. If they are too

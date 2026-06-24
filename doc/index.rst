@@ -24,6 +24,9 @@ OpenShot Video Editor is a free, award-winning, open-source video editor, availa
 Linux, Mac, Chrome OS, and Windows. OpenShot can create stunning videos, films, and animations with an
 easy-to-use interface and rich set of features.
 
+The creative workflow notes below are the planning cluster for the framing,
+properties, export, and pairing mission that this branch is documenting.
+
 .. image:: images/ui-example.jpg
 
 Table of Contents:
