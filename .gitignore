@@ -48,3 +48,7 @@ doc/locale/.doctrees/
 .kittify/runtime/
 .kittify/sync-state.json
 .kittify/workspaces/
+
+# Spec Kitty-generated trees
+/.kittify/
+/kitty-specs/
