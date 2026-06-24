@@ -39,7 +39,7 @@ history:
   actor: system
   action: Prompt generated via /spec-kitty.tasks
 agent_profile: ''
-authoritative_surface: kitty-specs/creative-workflow-control-surface-01KVTEXD/
+authoritative_surface: doc/creative_workflow_plan.rst
 create_intent: []
 execution_mode: planning_artifact
 model: ''
@@ -50,11 +50,6 @@ owned_files:
 - doc/creative_workflow_mission_breakdown.rst
 - doc/creative_workflow_issues.rst
 - doc/index.rst
-- kitty-specs/creative-workflow-control-surface-01KVTEXD/plan.md
-- kitty-specs/creative-workflow-control-surface-01KVTEXD/research.md
-- kitty-specs/creative-workflow-control-surface-01KVTEXD/data-model.md
-- kitty-specs/creative-workflow-control-surface-01KVTEXD/quickstart.md
-- kitty-specs/creative-workflow-control-surface-01KVTEXD/spec-kitty-bugs.md
 role: ''
 tags: []
 task_type: plan
@@ -199,4 +194,3 @@ docs. It should not touch product source files.
 ## Activity Log
 
 - 2026-06-23T14:56:36Z - system - Prompt created.
-- 2026-06-24T05:01:30Z – user – WP01 planning docs and inventory are complete
