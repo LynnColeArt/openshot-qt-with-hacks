@@ -31,6 +31,7 @@ import tempfile
 import types
 import unittest
 from unittest.mock import patch
+import json
 
 import openshot
 from qt_api import QApplication, QColor, QLabel, QPoint, QPointF, QPushButton, QRect, QRectF, QSize, QStandardItem, QTransform, Qt, QWidget
@@ -1206,6 +1207,99 @@ class VideoWidgetTransformTests(unittest.TestCase):
         self.assertEqual(["stroke_alpha"], list(object_payload.keys()))
         self.assertIsInstance(object_payload["stroke_alpha"], dict)
         self.assertEqual(object_payload["stroke_alpha"]["Points"][0]["co"], {"X": 1, "Y": 0.25})
+
+    def test_properties_model_category_helper_groups_known_properties(self):
+        helper = PropertiesModel.__new__(PropertiesModel)
+        clip = types.SimpleNamespace(data={})
+        effect = types.SimpleNamespace(data={"class_name": "Blur"})
+        color_grade = types.SimpleNamespace(data={"class_name": "ColorGrade"})
+
+        self.assertEqual(
+            helper._property_category("rotation", {"type": "float", "name": "Rotation"}, "clip", clip),
+            helper.PROPERTY_CATEGORY_TRANSFORM,
+        )
+        self.assertEqual(
+            helper._property_category("volume", {"type": "float", "name": "Volume"}, "clip", clip),
+            helper.PROPERTY_CATEGORY_AUDIO,
+        )
+        self.assertEqual(
+            helper._property_category("reader", {"type": "reader", "name": "Reader"}, "clip", clip),
+            helper.PROPERTY_CATEGORY_SOURCE,
+        )
+        self.assertEqual(
+            helper._property_category("strength", {"type": "float", "name": "Strength"}, "effect", effect),
+            helper.PROPERTY_CATEGORY_EFFECTS,
+        )
+        self.assertEqual(
+            helper._property_category(
+                "curve",
+                {"type": "colorgrade_curve", "name": "Curve"},
+                "effect",
+                color_grade,
+            ),
+            helper.PROPERTY_CATEGORY_COLOR,
+        )
+
+    def test_properties_model_category_filter_limits_rows(self):
+        def make_property(name, prop_type, value, memo=None):
+            return {
+                "name": name,
+                "type": prop_type,
+                "value": value,
+                "memo": memo if memo is not None else str(value),
+                "readonly": False,
+                "keyframe": False,
+                "points": 1,
+                "interpolation": openshot.LINEAR,
+                "choices": [],
+                "min": 0.0,
+                "max": 100.0,
+                "closest_point_x": 1,
+                "previous_point_x": 1,
+            }
+
+        class FakeClip:
+            def __init__(self, properties):
+                self._properties = properties
+                self.data = {}
+
+            def Id(self):
+                return "clip-1"
+
+            def PropertiesJSON(self, _frame_number):
+                return json.dumps(self._properties)
+
+        helper = PropertiesModel.__new__(PropertiesModel)
+        helper.model = ClipStandardItemModel()
+        helper.model.setColumnCount(2)
+        helper.selected = [(FakeClip({
+            "rotation": make_property("Rotation", "float", 5.0),
+            "volume": make_property("Volume", "float", 0.5),
+        }), "clip")]
+        helper.frame_number = 1
+        helper.new_item = True
+        helper.items = {}
+        helper.ignore_update_signal = False
+        helper.previous_filter = None
+        helper.filter_base_properties = []
+        helper._trim_preview_mode = False
+        helper.parent = types.SimpleNamespace(property_model_refreshed=lambda: None)
+
+        fake_window = types.SimpleNamespace(
+            txtPropertyFilter=types.SimpleNamespace(text=lambda: ""),
+            propertyCategoryFilter=types.SimpleNamespace(
+                currentData=lambda: "transform",
+                currentText=lambda: "Transform",
+            ),
+            CaptionTextLoaded=types.SimpleNamespace(emit=lambda *args, **kwargs: None),
+        )
+        fake_app = types.SimpleNamespace(window=fake_window, _tr=lambda text: text)
+
+        with patch("windows.models.properties_model.get_app", return_value=fake_app):
+            PropertiesModel.update_model(helper, "")
+
+        self.assertEqual(helper.model.rowCount(), 1)
+        self.assertEqual(helper.model.item(0, 0).text(), "Rotation")
 
     def test_tracked_object_transform_modes_exclude_origin_and_rotation(self):
         QWidget.__init__(self.widget)

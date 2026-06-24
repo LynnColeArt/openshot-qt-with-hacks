@@ -26,7 +26,6 @@
  """
 
 import os
-from collections import OrderedDict
 from operator import itemgetter
 
 from qt_api import QMimeData, Qt, QLocale, QTimer
@@ -67,6 +66,153 @@ class ClipStandardItemModel(QStandardItemModel):
 
 
 class PropertiesModel(updates.UpdateInterface):
+    PROPERTY_CATEGORY_ALL = "all"
+    PROPERTY_CATEGORY_ESSENTIALS = "essentials"
+    PROPERTY_CATEGORY_TIMING = "timing"
+    PROPERTY_CATEGORY_TRANSFORM = "transform"
+    PROPERTY_CATEGORY_AUDIO = "audio"
+    PROPERTY_CATEGORY_COLOR = "color"
+    PROPERTY_CATEGORY_EFFECTS = "effects"
+    PROPERTY_CATEGORY_SOURCE = "source"
+    PROPERTY_CATEGORY_ADVANCED = "advanced"
+
+    PROPERTY_CATEGORY_ORDER = (
+        PROPERTY_CATEGORY_ESSENTIALS,
+        PROPERTY_CATEGORY_TIMING,
+        PROPERTY_CATEGORY_TRANSFORM,
+        PROPERTY_CATEGORY_AUDIO,
+        PROPERTY_CATEGORY_COLOR,
+        PROPERTY_CATEGORY_EFFECTS,
+        PROPERTY_CATEGORY_SOURCE,
+        PROPERTY_CATEGORY_ADVANCED,
+    )
+
+    _PROPERTY_SOURCE_KEYS = {"reader", "mask_reader"}
+    _PROPERTY_TIMING_KEYS = {"time", "position", "start", "end", "duration"}
+    _PROPERTY_TRANSFORM_KEYS = {
+        "scale",
+        "scale_x",
+        "scale_y",
+        "gravity",
+        "location_x",
+        "location_y",
+        "rotation",
+        "shear_x",
+        "shear_y",
+        "origin_x",
+        "origin_y",
+        "alpha",
+    }
+    _PROPERTY_AUDIO_KEYS = {
+        "volume",
+        "has_audio",
+        "has_video",
+        "channel_filter",
+        "channel_mapping",
+        "mute",
+        "waveform",
+    }
+    _PROPERTY_COLOR_KEYS = {
+        "color",
+        "wave_color",
+        "background_color",
+        "foreground_color",
+        "font_color",
+        "text_color",
+        "border_color",
+        "fill_color",
+        "highlight_color",
+        "shadow_color",
+        "primary_color",
+        "secondary_color",
+        "tertiary_color",
+        "lut_path",
+    }
+    _PROPERTY_ESSENTIAL_KEYS = {
+        "id",
+        "title",
+        "name",
+        "enabled",
+        "visible",
+        "track",
+        "caption",
+        "font",
+        "file_id",
+    }
+
+    def property_category_options(self):
+        _ = get_app()._tr
+        return [
+            (self.PROPERTY_CATEGORY_ALL, _("All")),
+            (self.PROPERTY_CATEGORY_ESSENTIALS, _("Essentials")),
+            (self.PROPERTY_CATEGORY_TIMING, _("Timing")),
+            (self.PROPERTY_CATEGORY_TRANSFORM, _("Transform")),
+            (self.PROPERTY_CATEGORY_AUDIO, _("Audio")),
+            (self.PROPERTY_CATEGORY_COLOR, _("Color")),
+            (self.PROPERTY_CATEGORY_EFFECTS, _("Effects")),
+            (self.PROPERTY_CATEGORY_SOURCE, _("Source")),
+            (self.PROPERTY_CATEGORY_ADVANCED, _("Advanced")),
+        ]
+
+    def _current_category_filter(self):
+        window = getattr(get_app(), "window", None)
+        combo = getattr(window, "propertyCategoryFilter", None)
+        if combo and hasattr(combo, "currentData"):
+            category = combo.currentData()
+            if category:
+                return str(category)
+            text = combo.currentText() if hasattr(combo, "currentText") else ""
+            if text:
+                return str(text).strip().lower()
+        return self.PROPERTY_CATEGORY_ALL
+
+    def _property_category(self, property_key, property_meta, item_type, item):
+        key = str(property_key or "").strip().lower()
+        prop_type = str(property_meta.get("type") or "").strip().lower()
+        label = str(property_meta.get("name") or "").strip().lower()
+        class_name = ""
+        if item and getattr(item, "data", None):
+            class_name = str((item.data or {}).get("class_name") or "").strip().lower()
+
+        if prop_type in {"colorgrade_curve", "colorgrade_wheels"}:
+            return self.PROPERTY_CATEGORY_COLOR
+        if key in self._PROPERTY_COLOR_KEYS or "color" in key:
+            return self.PROPERTY_CATEGORY_COLOR
+        if key in self._PROPERTY_SOURCE_KEYS or prop_type == "reader":
+            return self.PROPERTY_CATEGORY_SOURCE
+        if key in self._PROPERTY_TIMING_KEYS:
+            return self.PROPERTY_CATEGORY_TIMING
+        if key in self._PROPERTY_TRANSFORM_KEYS:
+            return self.PROPERTY_CATEGORY_TRANSFORM
+        if key in self._PROPERTY_AUDIO_KEYS or "volume" in key or "audio" in key:
+            return self.PROPERTY_CATEGORY_AUDIO
+        if key in self._PROPERTY_ESSENTIAL_KEYS or label in {"track", "title", "name"}:
+            return self.PROPERTY_CATEGORY_ESSENTIALS
+
+        if item_type == "effect":
+            if class_name == "colorgrade":
+                return self.PROPERTY_CATEGORY_COLOR
+            if class_name == "crop":
+                return self.PROPERTY_CATEGORY_TRANSFORM
+            return self.PROPERTY_CATEGORY_EFFECTS
+
+        if item_type == "transition" and class_name == "mask":
+            return self.PROPERTY_CATEGORY_SOURCE
+
+        return self.PROPERTY_CATEGORY_ADVANCED
+
+    def _property_sort_key(self, property_key, property_meta, item_type, item):
+        category = self._property_category(property_key, property_meta, item_type, item)
+        try:
+            category_index = self.PROPERTY_CATEGORY_ORDER.index(category)
+        except ValueError:
+            category_index = len(self.PROPERTY_CATEGORY_ORDER)
+        return (
+            category_index,
+            str(property_meta.get("name") or "").strip().lower(),
+            str(property_key or "").strip().lower(),
+        )
+
     def _insert_colorgrade_keyframe(self, data, property_type, frame_number):
         from windows.color_grade_editor import (
             _set_color_value,
@@ -1613,12 +1759,16 @@ class PropertiesModel(updates.UpdateInterface):
 
                     raw_properties = shared
 
-                # Sort all properties (by 'name')
-                all_properties = OrderedDict(sorted(raw_properties.items(), key=lambda x: x[1]['name']))
+                category_filter = self._current_category_filter()
+                all_properties = sorted(
+                    raw_properties.items(),
+                    key=lambda item: self._property_sort_key(item[0], item[1], item_type, c),
+                )
 
                 # Check if filter was changed (if so, wipe previous model data)
-                if self.previous_filter != filter:
+                if self.previous_filter != filter or self.previous_category_filter != category_filter:
                     self.previous_filter = filter
+                    self.previous_category_filter = category_filter
                     self.new_item = True  # filter changed, so we need to regenerate the entire model
 
                 # Build or update the model
@@ -1634,7 +1784,10 @@ class PropertiesModel(updates.UpdateInterface):
                     get_app().window.CaptionTextLoaded.emit("", None)
 
                 # Loop through properties, and build/update the model
-                for property in all_properties.items():
+                for property in all_properties:
+                    category = self._property_category(property[0], property[1], item_type, c)
+                    if category_filter not in (self.PROPERTY_CATEGORY_ALL, "") and category != category_filter:
+                        continue
                     if property[0] in tracked_object_properties:
                         # Add/update tracked object property
                         self.set_property(property, filter, c, item_type, object_id=tracked_object_id)
@@ -1673,6 +1826,7 @@ class PropertiesModel(updates.UpdateInterface):
         self.ignore_update_signal = False
         self.parent = parent
         self.previous_filter = None
+        self.previous_category_filter = None
         self.filter_base_properties = []
         self._trim_preview_mode = False
 

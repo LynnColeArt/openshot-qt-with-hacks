@@ -51,7 +51,7 @@ from qt_api import (
     QApplication, QMenu, QMessageBox, QDialog, QFileDialog, QInputDialog,
     QAction, QActionGroup, QSizePolicy,
     QStatusBar, QToolBar, QToolButton,
-    QLineEdit, QComboBox, QTextEdit, QShortcut, QTabBar, QTabWidget, QAbstractButton,
+    QLineEdit, QComboBox, QLabel, QTextEdit, QShortcut, QTabBar, QTabWidget, QAbstractButton,
     QPlainTextEdit, QSpinBox, QDoubleSpinBox
 )
 
@@ -5213,8 +5213,21 @@ class MainWindow(updates.UpdateWatcher, QMainWindow):
         self.propertyTableView = PropertiesTableView(self)
         self.propertyTableView.setTabKeyNavigation(False)
         self.selectionLabel = SelectionLabel(self)
-        self.dockPropertiesContents.layout().addWidget(self.selectionLabel, 0, 1)
-        self.dockPropertiesContents.layout().addWidget(self.propertyTableView, 2, 1)
+        self.propertyCategoryLabel = QLabel(_("Category"), self.dockPropertiesContents)
+        self.propertyCategoryLabel.setObjectName("lblPropertyCategory")
+        self.propertyCategoryFilter = QComboBox(self.dockPropertiesContents)
+        self.propertyCategoryFilter.setObjectName("propertyCategoryFilter")
+        self.propertyCategoryFilter.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        for category_key, category_label in self.propertyTableView.clip_properties_model.property_category_options():
+            self.propertyCategoryFilter.addItem(category_label, category_key)
+        self.dockPropertiesContents.layout().addWidget(self.selectionLabel, 0, 0, 1, 3)
+        self.dockPropertiesContents.layout().addWidget(self.propertyCategoryLabel, 1, 0)
+        self.dockPropertiesContents.layout().addWidget(self.propertyCategoryFilter, 1, 1)
+        self.dockPropertiesContents.layout().addWidget(self.txtPropertyFilter, 1, 2)
+        self.dockPropertiesContents.layout().addWidget(self.propertyTableView, 2, 0, 1, 3)
+        self.dockPropertiesContents.layout().setColumnStretch(1, 0)
+        self.dockPropertiesContents.layout().setColumnStretch(2, 1)
+        self.propertyCategoryFilter.currentIndexChanged.connect(self.propertyTableView.filter_changed)
 
         # Show Property timer
         # Timer to use a delay before showing properties

@@ -1423,14 +1423,16 @@ class PropertiesTableView(QTableView):
         self.clip_properties_model.update_frame(frame_number)
         self._sync_color_grade_editors_to_current_frame()
 
-    def filter_changed(self, value=None):
+    def filter_changed(self, _value=None):
         """ Filter the list of properties """
 
+        filter_value = get_app().window.txtPropertyFilter.text()
+
         # Update property model (and re-trigger filter logic)
-        self.clip_properties_model.update_model(value)
+        self.clip_properties_model.update_model(filter_value)
 
         # Filter keyframes visible on timeline
-        get_app().window.SetKeyframeFilter.emit(value)
+        get_app().window.SetKeyframeFilter.emit(filter_value)
 
     def contextMenuEvent(self, event):
         """ Display context menu """

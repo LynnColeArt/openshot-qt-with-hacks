@@ -337,7 +337,7 @@ def _collect_dock_content_widgets(dock, content, root, toolbar_widgets,
 
     # Special handling for properties dock
     if dock.objectName() == "dockProperties":
-        for name in ("btnSelectionName", "txtPropertyFilter", "propertyTableView"):
+        for name in ("btnSelectionName", "propertyCategoryFilter", "txtPropertyFilter", "propertyTableView"):
             widget = dock.findChild(QWidget, name)
             if widget and widget not in ordered_content:
                 ordered_content.append(widget)
