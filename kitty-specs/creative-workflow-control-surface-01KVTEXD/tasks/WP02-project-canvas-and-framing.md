@@ -16,6 +16,9 @@ tracker_refs: []
 planning_base_branch: develop
 merge_target_branch: develop
 branch_strategy: Planning artifacts for this mission were generated on develop. During /spec-kitty.implement this WP may branch from a dependency-specific base, but completed changes must merge back into develop unless the human explicitly redirects the landing branch.
+base_branch: kitty/mission-creative-workflow-control-surface-01KVTEXD
+base_commit: be58af0d890f461c91460230d86465f0362e798a
+created_at: '2026-06-24T06:08:23.094350+00:00'
 subtasks:
 - T004
 - T005
@@ -23,8 +26,8 @@ subtasks:
 - T007
 phase: Phase 2 - Framing and canvas
 assignee: ''
-agent: "python-pedro"
-shell_pid: "298083"
+agent: ''
+shell_pid: '295350'
 history:
 - at: '2026-06-23T14:56:36Z'
   actor: system
@@ -189,4 +192,3 @@ framing surfaces so review stays manageable.
 ## Activity Log
 
 - 2026-06-23T14:56:36Z - system - Prompt created.
-- 2026-06-24T06:09:02Z – python-pedro – shell_pid=298083 – Started implementation via action command
